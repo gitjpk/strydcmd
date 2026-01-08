@@ -80,13 +80,24 @@ stryd -d 20260108          # Activities on January 8, 2026
 stryd --date 20251225      # Activities on December 25, 2025
 ```
 
+### Filter activities by tag
+
+Filter activities by a specific tag (must be combined with -g):
+```bash
+stryd -g 30 -t "barcelona 26"        # Activities from last 30 days with tag "barcelona 26"
+stryd -g 7 --tag "marathon training" # Activities from last 7 days with specific tag
+```
+
+If the tag is not found, the tool will display available tags from your recent activities.
+
 ### Download FIT files
 
 Download FIT files for the retrieved activities:
 ```bash
-stryd -g 7 -f           # Download FIT files for activities from last 7 days
-stryd -g 30 --fit       # Download FIT files for activities from last 30 days
-stryd -d 20260108 -f    # Download FIT files for activities on a specific date
+stryd -g 7 -f                    # Download FIT files for activities from last 7 days
+stryd -g 30 --fit                # Download FIT files for activities from last 30 days
+stryd -d 20260108 -f             # Download FIT files for activities on a specific date
+stryd -g 7 -t "barcelona 26" -f  # Download FIT files for activities with specific tag
 ```
 
 Specify a custom output directory:
@@ -115,6 +126,8 @@ strydcmd/
 - ✅ Session token management
 - ✅ User ID retrieval
 - ✅ Retrieve activities for a custom time period
+- ✅ Retrieve activities for a specific date
+- ✅ Filter activities by tag
 - ✅ Display activity details (distance, pace, power, heart rate)
 - ✅ Download FIT files for activities
 
@@ -122,7 +135,6 @@ strydcmd/
 
 - 🔜 Power data analysis
 - 🔜 Training zones calculation
-- 🔜 Tag filtering
 - 🔜 Export to CSV/JSON
 
 ## Stryd API

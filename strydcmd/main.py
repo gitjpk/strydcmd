@@ -96,6 +96,12 @@ def main():
         help='Get activities for a specific date (format: YYYYMMDD, e.g., 20260108)'
     )
     parser.add_argument(
+        '-t', '--tag',
+        type=str,
+        metavar='TAG',
+        help='Filter activities by tag (e.g., "barcelona 26")'
+    )
+    parser.add_argument(
         '-f', '--fit',
         action='store_true',
         help='Download FIT files for the retrieved activities'
@@ -113,6 +119,10 @@ def main():
     # Validate that -g and -d are mutually exclusive
     if args.get is not None and args.date:
         parser.error("❌ Error: -g/--get and -d/--date options cannot be used together")
+    
+    # Validate that -t/--tag requires -g/--get
+    if args.tag and args.get is None:
+        parser.error("❌ Error: -t/--tag option requires -g/--get option")
     
     # Validate that -f/--fit requires either -g/--get or -d/--date
     if args.fit and args.get is None and not args.date:
@@ -158,6 +168,25 @@ def main():
             activities = [a for a in all_activities if a.get('timestamp', 0) >= cutoff_timestamp]
             
             print(f"\nFiltered to {len(activities)} activities from the last {days} days")
+            
+            # Filter by tag if provided
+            if args.tag:
+                original_count = len(activities)
+                activities = [a for a in activities if args.tag in (a.get('tags') or [])]
+                print(f"Filtered by tag '{args.tag}': {len(activities)} activities (from {original_count})")
+                
+                if len(activities) == 0:
+                    # Show available tags to help user
+                    all_tags = set()
+                    for a in all_activities[:50]:  # Check first 50 activities
+                        tags = a.get('tags')
+                        if tags:
+                            all_tags.update(tags)
+                    if all_tags:
+                        print(f"\n⚠️  No activities found with tag '{args.tag}'")
+                        print(f"\nAvailable tags in recent activities:")
+                        for tag in sorted(all_tags):
+                            print(f"  - {tag}")
             
             # Print activities (limit display to 20 most recent for readability)
             print_activities(activities, limit=20)
