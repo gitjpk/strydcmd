@@ -53,11 +53,38 @@ def print_activities(activities, limit: int = None):
         activity_type = activity.get('type', 'N/A')
         name = activity.get('name', 'Unnamed Activity')
         
+        # Additional details
+        rpe = activity.get('rpe', 0)
+        feel = activity.get('feel', 'N/A')
+        source = activity.get('source', 'N/A')
+        surface_type = activity.get('surface_type', 'N/A')
+        recording_mode = activity.get('recording_mode', 'N/A')
+        critical_impact = activity.get('critical_impact', 0)
+        elevation_gain = activity.get('total_elevation_gain', 0)
+        elevation_loss = activity.get('total_elevation_loss', 0)
+        tags = activity.get('tags', [])
+        
         print(f"Activity #{idx}: {name}")
         print(f"  Date: {date_str}")
         print(f"  Type: {activity_type}")
+        if feel != 'N/A':
+            print(f"  Feel: {feel}")
+        if rpe > 0:
+            print(f"  RPE: {rpe}/10")
+        if source != 'N/A':
+            print(f"  Source: {source}")
+        if surface_type != 'N/A':
+            print(f"  Surface: {surface_type}")
+        if recording_mode != 'N/A':
+            print(f"  Recording Mode: {recording_mode}")
+        if tags:
+            print(f"  Tags: {', '.join(tags)}")
         print(f"  Distance: {distance:.2f} km")
         print(f"  Moving Time: {moving_time:.1f} minutes")
+        if elevation_gain != 0:
+            print(f"  Elevation Gain: {elevation_gain:.1f} m")
+        if elevation_loss != 0:
+            print(f"  Elevation Loss: {abs(elevation_loss):.1f} m")
         
         # Calculate pace from speed
         if avg_speed > 0:
@@ -70,6 +97,8 @@ def print_activities(activities, limit: int = None):
             print(f"  Avg Power: {int(avg_power)} W")
         if cp > 0:
             print(f"  Critical Power: {int(cp)} W")
+        if critical_impact != 0:
+            print(f"  Critical Impact: {critical_impact:.1f}")
         if avg_hr > 0:
             print(f"  Avg Heart Rate: {int(avg_hr)} bpm")
         
