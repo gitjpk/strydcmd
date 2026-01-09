@@ -138,7 +138,10 @@ def export_activities_csv(activities, filename):
         'date', 'name', 'type', 'feel', 'rpe', 'source', 'surface_type', 
         'recording_mode', 'tags', 'distance_km', 'moving_time_min', 
         'elevation_gain_m', 'elevation_loss_m', 'avg_pace_min_km', 
-        'avg_power_w', 'critical_power_w', 'critical_impact', 'avg_heart_rate_bpm'
+        'avg_power_w', 'critical_power_w', 'critical_impact', 'avg_heart_rate_bpm',
+        'zone_easy_min', 'zone_easy_pct', 'zone_moderate_min', 'zone_moderate_pct',
+        'zone_threshold_min', 'zone_threshold_pct', 'zone_interval_min', 'zone_interval_pct',
+        'zone_repetition_min', 'zone_repetition_pct'
     ]
     
     with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
@@ -163,6 +166,25 @@ def export_activities_csv(activities, filename):
             tags = activity.get('tags', [])
             tags_str = ', '.join(tags) if tags else ''
             
+            # Calculate power zones
+            zones = activity.get('zones', [])
+            seconds_in_zones = activity.get('seconds_in_zones', [])
+            zone_data = {}
+            if zones and seconds_in_zones and len(zones) == len(seconds_in_zones):
+                zone_names = ['easy', 'moderate', 'threshold', 'interval', 'repetition']
+                for i, (zone, seconds) in enumerate(zip(zones, seconds_in_zones)):
+                    if i < len(zone_names):
+                        minutes = seconds / 60
+                        pct = (seconds / (moving_time * 60)) * 100 if moving_time > 0 else 0
+                        zone_data[f'zone_{zone_names[i]}_min'] = f"{minutes:.1f}"
+                        zone_data[f'zone_{zone_names[i]}_pct'] = f"{pct:.1f}"
+            
+            # Fill missing zones with 0
+            for zone_name in ['easy', 'moderate', 'threshold', 'interval', 'repetition']:
+                if f'zone_{zone_name}_min' not in zone_data:
+                    zone_data[f'zone_{zone_name}_min'] = "0.0"
+                    zone_data[f'zone_{zone_name}_pct'] = "0.0"
+            
             row = {
                 'date': date_str,
                 'name': activity.get('name', ''),
@@ -181,7 +203,8 @@ def export_activities_csv(activities, filename):
                 'avg_power_w': int(activity.get('average_power', 0)),
                 'critical_power_w': int(activity.get('ftp', 0)),
                 'critical_impact': f"{activity.get('critical_impact', 0):.1f}",
-                'avg_heart_rate_bpm': int(activity.get('average_heart_rate', 0))
+                'avg_heart_rate_bpm': int(activity.get('average_heart_rate', 0)),
+                **zone_data
             }
             writer.writerow(row)
     
@@ -217,6 +240,22 @@ def export_activities_json(activities, filename):
             pace_sec = int(pace_seconds_per_km % 60)
             avg_pace = f"{pace_min}:{pace_sec:02d}"
         
+        # Calculate power zones
+        zones = activity.get('zones', [])
+        seconds_in_zones = activity.get('seconds_in_zones', [])
+        power_zones = []
+        if zones and seconds_in_zones and len(zones) == len(seconds_in_zones):
+            for zone, seconds in zip(zones, seconds_in_zones):
+                minutes = seconds / 60
+                pct = (seconds / (moving_time * 60)) * 100 if moving_time > 0 else 0
+                power_zones.append({
+                    'name': zone.get('name', 'Unknown'),
+                    'power_low': int(zone.get('power_low', 0)),
+                    'power_high': int(zone.get('power_high', 0)),
+                    'time_min': round(minutes, 1),
+                    'time_pct': round(pct, 1)
+                })
+        
         activity_data = {
             'date': date_str,
             'name': activity.get('name', ''),
@@ -235,7 +274,8 @@ def export_activities_json(activities, filename):
             'avg_power_w': int(activity.get('average_power', 0)),
             'critical_power_w': int(activity.get('ftp', 0)),
             'critical_impact': round(activity.get('critical_impact', 0), 1),
-            'avg_heart_rate_bpm': int(activity.get('average_heart_rate', 0))
+            'avg_heart_rate_bpm': int(activity.get('average_heart_rate', 0)),
+            'power_zones': power_zones
         }
         export_data.append(activity_data)
     
