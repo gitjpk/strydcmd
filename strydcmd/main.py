@@ -49,6 +49,7 @@ def print_activities(activities, limit: int = None):
         avg_power = activity.get('average_power', 0)
         avg_speed = activity.get('average_speed', 0)  # m/s
         avg_hr = activity.get('average_heart_rate', 0)
+        cp = activity.get('ftp', 0)  # Critical Power (FTP)
         activity_type = activity.get('type', 'N/A')
         name = activity.get('name', 'Unnamed Activity')
         
@@ -67,6 +68,8 @@ def print_activities(activities, limit: int = None):
         
         if avg_power > 0:
             print(f"  Avg Power: {int(avg_power)} W")
+        if cp > 0:
+            print(f"  Critical Power: {int(cp)} W")
         if avg_hr > 0:
             print(f"  Avg Heart Rate: {int(avg_hr)} bpm")
         
