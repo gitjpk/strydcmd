@@ -131,11 +131,12 @@ strydcmd/
 - ✅ Affichage des détails des activités (distance, allure, puissance, fréquence cardiaque)
 - ✅ Téléchargement des fichiers FIT des activités
 - ✅ Export aux formats CSV/JSON
+- ✅ Calcul et distribution des zones d'entraînement
 
 ## Prochaines étapes
 
-- 🔜 Analyse des données de puissance
-- 🔜 Calcul des zones d'entraînement
+- 🔜 Carte d'activité (polyline)
+- 🔜 Graphiques d'activité
 
 ## API Stryd
 
