@@ -130,12 +130,12 @@ strydcmd/
 - ✅ Filter activities by tag
 - ✅ Display activity details (distance, pace, power, heart rate)
 - ✅ Download FIT files for activities
+- ✅ Export to CSV/JSON formats
 
 ## Roadmap
 
 - 🔜 Power data analysis
 - 🔜 Training zones calculation
-- 🔜 Export to CSV/JSON
 
 ## Stryd API
 

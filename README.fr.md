@@ -130,12 +130,12 @@ strydcmd/
 - ✅ Filtrage des activités par tag
 - ✅ Affichage des détails des activités (distance, allure, puissance, fréquence cardiaque)
 - ✅ Téléchargement des fichiers FIT des activités
+- ✅ Export aux formats CSV/JSON
 
 ## Prochaines étapes
 
 - 🔜 Analyse des données de puissance
 - 🔜 Calcul des zones d'entraînement
-- 🔜 Export en CSV/JSON
 
 ## API Stryd
 
