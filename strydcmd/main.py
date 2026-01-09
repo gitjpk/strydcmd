@@ -104,6 +104,21 @@ def print_activities(activities, limit: int = None):
         if avg_hr > 0:
             print(f"  Avg Heart Rate: {int(avg_hr)} bpm")
         
+        # Power zones analysis
+        zones = activity.get('zones', [])
+        seconds_in_zones = activity.get('seconds_in_zones', [])
+        if zones and seconds_in_zones and len(zones) == len(seconds_in_zones):
+            print(f"\n  Power Zones:")
+            for zone, seconds in zip(zones, seconds_in_zones):
+                if moving_time > 0:
+                    pct = (seconds / (moving_time * 60)) * 100  # moving_time is in minutes
+                    minutes = seconds / 60
+                    zone_name = zone.get('name', 'Unknown')
+                    power_low = int(zone.get('power_low', 0))
+                    power_high = int(zone.get('power_high', 0))
+                    if seconds > 0:  # Only show zones with time spent
+                        print(f"    {zone_name} ({power_low}-{power_high}W): {minutes:.1f}min ({pct:.1f}%)")
+        
         print()
 
 
