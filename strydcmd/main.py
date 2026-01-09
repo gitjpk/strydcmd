@@ -116,8 +116,7 @@ def print_activities(activities, limit: int = None):
                     zone_name = zone.get('name', 'Unknown')
                     power_low = int(zone.get('power_low', 0))
                     power_high = int(zone.get('power_high', 0))
-                    if seconds > 0:  # Only show zones with time spent
-                        print(f"    {zone_name} ({power_low}-{power_high}W): {minutes:.1f}min ({pct:.1f}%)")
+                    print(f"    {zone_name} ({power_low}-{power_high}W): {minutes:.1f}min ({pct:.1f}%)")
         
         print()
 
