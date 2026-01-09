@@ -1,7 +1,9 @@
 """Main CLI entry point for strydcmd"""
 
 import argparse
+import csv
 import datetime
+import json
 import os
 import re
 import sys
@@ -105,6 +107,130 @@ def print_activities(activities, limit: int = None):
         print()
 
 
+def export_activities_csv(activities, filename):
+    """
+    Export activities to CSV file
+    
+    Args:
+        activities: List of activity dictionaries
+        filename: Output CSV filename
+    """
+    if not activities:
+        print("No activities to export.")
+        return
+    
+    # Define CSV columns
+    fieldnames = [
+        'date', 'name', 'type', 'feel', 'rpe', 'source', 'surface_type', 
+        'recording_mode', 'tags', 'distance_km', 'moving_time_min', 
+        'elevation_gain_m', 'elevation_loss_m', 'avg_pace_min_km', 
+        'avg_power_w', 'critical_power_w', 'critical_impact', 'avg_heart_rate_bpm'
+    ]
+    
+    with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        
+        for activity in activities:
+            timestamp = activity.get('timestamp', 0)
+            date_str = datetime.datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
+            distance = activity.get('distance', 0) / 1000
+            moving_time = activity.get('moving_time', 0) / 60
+            avg_speed = activity.get('average_speed', 0)
+            
+            # Calculate pace
+            avg_pace = ""
+            if avg_speed > 0:
+                pace_seconds_per_km = 1000 / avg_speed
+                pace_min = int(pace_seconds_per_km / 60)
+                pace_sec = int(pace_seconds_per_km % 60)
+                avg_pace = f"{pace_min}:{pace_sec:02d}"
+            
+            tags = activity.get('tags', [])
+            tags_str = ', '.join(tags) if tags else ''
+            
+            row = {
+                'date': date_str,
+                'name': activity.get('name', ''),
+                'type': activity.get('type', ''),
+                'feel': activity.get('feel', ''),
+                'rpe': activity.get('rpe', ''),
+                'source': activity.get('source', ''),
+                'surface_type': activity.get('surface_type', ''),
+                'recording_mode': activity.get('recording_mode', ''),
+                'tags': tags_str,
+                'distance_km': f"{distance:.2f}",
+                'moving_time_min': f"{moving_time:.1f}",
+                'elevation_gain_m': f"{activity.get('total_elevation_gain', 0):.1f}",
+                'elevation_loss_m': f"{abs(activity.get('total_elevation_loss', 0)):.1f}",
+                'avg_pace_min_km': avg_pace,
+                'avg_power_w': int(activity.get('average_power', 0)),
+                'critical_power_w': int(activity.get('ftp', 0)),
+                'critical_impact': f"{activity.get('critical_impact', 0):.1f}",
+                'avg_heart_rate_bpm': int(activity.get('average_heart_rate', 0))
+            }
+            writer.writerow(row)
+    
+    print(f"\n✓ Exported {len(activities)} activities to {filename}")
+
+
+def export_activities_json(activities, filename):
+    """
+    Export activities to JSON file
+    
+    Args:
+        activities: List of activity dictionaries
+        filename: Output JSON filename
+    """
+    if not activities:
+        print("No activities to export.")
+        return
+    
+    # Prepare simplified activity data for JSON
+    export_data = []
+    for activity in activities:
+        timestamp = activity.get('timestamp', 0)
+        date_str = datetime.datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
+        distance = activity.get('distance', 0) / 1000
+        moving_time = activity.get('moving_time', 0) / 60
+        avg_speed = activity.get('average_speed', 0)
+        
+        # Calculate pace
+        avg_pace = ""
+        if avg_speed > 0:
+            pace_seconds_per_km = 1000 / avg_speed
+            pace_min = int(pace_seconds_per_km / 60)
+            pace_sec = int(pace_seconds_per_km % 60)
+            avg_pace = f"{pace_min}:{pace_sec:02d}"
+        
+        activity_data = {
+            'date': date_str,
+            'name': activity.get('name', ''),
+            'type': activity.get('type', ''),
+            'feel': activity.get('feel', ''),
+            'rpe': activity.get('rpe', 0),
+            'source': activity.get('source', ''),
+            'surface_type': activity.get('surface_type', ''),
+            'recording_mode': activity.get('recording_mode', ''),
+            'tags': activity.get('tags', []),
+            'distance_km': round(distance, 2),
+            'moving_time_min': round(moving_time, 1),
+            'elevation_gain_m': round(activity.get('total_elevation_gain', 0), 1),
+            'elevation_loss_m': round(abs(activity.get('total_elevation_loss', 0)), 1),
+            'avg_pace_min_km': avg_pace,
+            'avg_power_w': int(activity.get('average_power', 0)),
+            'critical_power_w': int(activity.get('ftp', 0)),
+            'critical_impact': round(activity.get('critical_impact', 0), 1),
+            'avg_heart_rate_bpm': int(activity.get('average_heart_rate', 0))
+        }
+        export_data.append(activity_data)
+    
+    with open(filename, 'w', encoding='utf-8') as jsonfile:
+        json.dump(export_data, jsonfile, indent=2, ensure_ascii=False)
+    
+    print(f"\n✓ Exported {len(activities)} activities to {filename}")
+
+
 def main():
     """Main function for Stryd CLI"""
     
@@ -145,8 +271,54 @@ def main():
         metavar='DIR',
         help='Output directory for FIT files (default: fit_files)'
     )
+    parser.add_argument(
+        '-e', '--export',
+        nargs='*',
+        metavar=('FORMAT', 'FILE'),
+        help='Export activities to CSV or JSON (default: CSV stryd_export.csv). Usage: -e CSV file.csv or -e JSON file.json or -e file.csv'
+    )
     
     args = parser.parse_args()
+    
+    # Parse export arguments
+    export_format = None
+    export_filename = None
+    if args.export is not None:
+        if len(args.export) == 0:
+            # -e without arguments: use defaults
+            export_format = 'CSV'
+            export_filename = 'stryd_export.csv'
+        elif len(args.export) == 1:
+            # -e with one argument: could be format or filename
+            arg = args.export[0].upper()
+            if arg in ['CSV', 'JSON']:
+                export_format = arg
+                export_filename = f'stryd_export.{arg.lower()}'
+            else:
+                # It's a filename, determine format from extension or use default
+                export_filename = args.export[0]
+                if export_filename.lower().endswith('.json'):
+                    export_format = 'JSON'
+                else:
+                    export_format = 'CSV'
+                    if not export_filename.lower().endswith('.csv'):
+                        export_filename += '.csv'
+        elif len(args.export) == 2:
+            # -e with two arguments: format and filename
+            export_format = args.export[0].upper()
+            export_filename = args.export[1]
+            if export_format not in ['CSV', 'JSON']:
+                parser.error("❌ Error: Export format must be CSV or JSON")
+            # Add extension if not present
+            expected_ext = f'.{export_format.lower()}'
+            if not export_filename.lower().endswith(expected_ext):
+                export_filename += expected_ext
+        else:
+            parser.error("❌ Error: -e/--export accepts 0, 1, or 2 arguments")
+    
+    # Validate that -e/--export requires either -g/--get or -d/--date
+    if args.export is not None and args.get is None and not args.date:
+        parser.error("❌ Error: -e/--export option requires -g/--get or -d/--date option")
     
     # Validate that -g and -d are mutually exclusive
     if args.get is not None and args.date:
@@ -223,6 +395,13 @@ def main():
             # Print activities (limit display to 20 most recent for readability)
             print_activities(activities, limit=20)
             
+            # Export activities if requested
+            if export_format and export_filename:
+                if export_format == 'CSV':
+                    export_activities_csv(activities, export_filename)
+                elif export_format == 'JSON':
+                    export_activities_json(activities, export_filename)
+            
             # Download FIT files if requested
             if args.fit:
                 print(f"\n{'='*80}")
@@ -287,6 +466,13 @@ def main():
             
             # Print activities
             print_activities(activities)
+            
+            # Export activities if requested
+            if export_format and export_filename:
+                if export_format == 'CSV':
+                    export_activities_csv(activities, export_filename)
+                elif export_format == 'JSON':
+                    export_activities_json(activities, export_filename)
             
             # Download FIT files if requested
             if args.fit:

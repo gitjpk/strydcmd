@@ -32,6 +32,11 @@ env/
 # FIT files
 fit_files/
 
+# Export files
+*.csv
+*.json
+!.vscode/*.json
+
 # IDE
 .vscode/
 .idea/
