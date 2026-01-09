@@ -15,3 +15,7 @@ dependencies = [
 
 [project.scripts]
 stryd = "strydcmd.main:main"
+strydsync = "strydcmd.sync:main"
+
+[tool.setuptools]
+packages = ["strydcmd"]

@@ -37,6 +37,12 @@ fit_files/
 *.json
 !.vscode/*.json
 
+# Database files
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
 # IDE
 .vscode/
 .idea/

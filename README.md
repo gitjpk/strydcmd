@@ -105,6 +105,82 @@ Specify a custom output directory:
 stryd -g 7 -f -o my_fit_files/    # Save to custom directory
 ```
 
+### Export to CSV or JSON
+
+Export activities to CSV or JSON format:
+```bash
+stryd -g 30 -e activities.csv     # Export to CSV
+stryd -g 7 -e data.json           # Export to JSON
+stryd -d 20260108 -e daily.csv    # Export specific date
+```
+
+### Synchronize activities to database
+
+The `strydsync` command synchronizes detailed activity data to a local SQLite database, including all time-series data (power, heart rate, GPS, etc.):
+
+```bash
+# Sync last 30 days (default)
+strydsync
+
+# Sync custom number of days
+strydsync 60     # Last 60 days
+strydsync 90     # Last 90 days
+
+# Sync specific date
+strydsync -d 20260108     # January 8, 2026
+
+# Force resynchronization (overwrite existing data)
+strydsync --force         # Resync last 30 days
+strydsync 90 --force      # Resync last 90 days
+
+# Custom batch size (default: 10 activities per batch)
+strydsync 30 --batch-size 5
+
+# Custom database location
+strydsync --db /path/to/my_activities.db
+```
+
+**Database Structure:**
+- `activities`: Main activity metadata (87 fields)
+- `zones_distribution`: Power zones distribution per activity
+- `timeseries_power`: Power data over time (5 metrics)
+- `timeseries_kinematics`: Speed, distance, cadence, stride length
+- `timeseries_cardio`: Heart rate and RR intervals
+- `timeseries_biomechanics`: Ground time, oscillation, leg spring, etc.
+- `timeseries_elevation`: Elevation and grade data
+- `gps_points`: GPS coordinates for mapping
+- `laps`: Lap markers and workout steps
+
+The sync process:
+- ✅ Automatically skips already synced activities
+- ✅ Shows progress with batch processing (10 activities by default)
+- ✅ Stores complete activity details including all time-series data
+- ✅ Supports force mode to update existing activities
+- ✅ Creates SQLite database with indexed tables for efficient queries
+
+**Example output:**
+```
+============================================================
+Starting sync: 30 activities to process
+Batch size: 10 activities
+Force mode: OFF
+============================================================
+
+--- Batch 1/3 (activities 1-10) ---
+  [1/30] → Fetching details for Morning Run (2026-01-08)...
+  [1/30] ✓ Morning Run (2026-01-08) - saved
+  [2/30] ✓ Evening Workout (2026-01-07) - already synced, skipping
+  ...
+
+============================================================
+Sync completed!
+  • New/Updated: 15
+  • Skipped:     12
+  • Failed:      3
+  • Total in DB: 1234
+============================================================
+```
+
 ## Project Structure
 
 ```
@@ -112,7 +188,9 @@ strydcmd/
 ├── strydcmd/           # Main package
 │   ├── __init__.py     # Package initialization
 │   ├── stryd_api.py    # Stryd API client
-│   └── main.py         # CLI entry point
+│   ├── main.py         # CLI entry point for stryd command
+│   ├── sync.py         # CLI entry point for strydsync command
+│   └── database.py     # SQLite database management
 ├── .env.example        # Configuration example
 ├── .gitignore          # Files ignored by Git
 ├── pyproject.toml      # Project configuration
@@ -128,21 +206,29 @@ strydcmd/
 - ✅ Retrieve activities for a custom time period
 - ✅ Retrieve activities for a specific date
 - ✅ Filter activities by tag
-- ✅ Display activity details (distance, pace, power, heart rate)
+- ✅ Display comprehensive activity details (distance, pace, power, heart rate, zones, etc.)
 - ✅ Download FIT files for activities
-- ✅ Export to CSV/JSON formats
+- ✅ Export to CSV/JSON formats with power zones
 - ✅ Training zones calculation and distribution
+- ✅ **Sync detailed activity data to SQLite database**
+- ✅ **Store complete time-series data (power, kinematics, cardio, biomechanics, GPS)**
+- ✅ **Smart sync with duplicate detection and skip**
+- ✅ **Batch processing with progress tracking**
 
 ## Roadmap
 
-- 🔜 Activity Map (polyline)
-- 🔜 Activity Graph
+- 🔜 Query and analyze database data
+- 🔜 Activity visualization from database
+- 🔜 Training load and trends analysis
+- 🔜 Activity Map rendering (from GPS points)
+- 🔜 Activity Graphs (power, HR, pace, elevation)
 
 ## Stryd API
 
 The tool uses the following Stryd API endpoints:
 - `POST /b/email/signin` - Authentication
-- `GET /b/api/v1/users/calendar` - Retrieve activities
+- `GET /b/api/v1/users/calendar` - Retrieve activity summaries
+- `GET /b/api/v1/activities/{id}` - Get detailed activity data (139 fields, time-series)
 - `GET /b/api/v1/activities/{id}/fit` - Download FIT file
 
 ## Development

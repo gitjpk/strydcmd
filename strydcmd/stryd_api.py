@@ -179,3 +179,36 @@ class StrydAPI:
                 
         except requests.exceptions.RequestException:
             return None
+    
+    def get_activity_details(self, activity_id: str) -> Optional[Dict]:
+        """
+        Get detailed information for a specific activity
+        
+        Args:
+            activity_id: The activity ID
+            
+        Returns:
+            Dictionary containing all activity details including time-series data,
+            or None if the request fails
+        """
+        if not self.session_id:
+            self.authenticate()
+        
+        headers = {
+            'Authorization': f'Bearer: {self.session_id}'
+        }
+        
+        url = f"{self.BASE_URL}/api/v1/activities/{activity_id}"
+        
+        try:
+            response = requests.get(url, headers=headers)
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                print(f"✗ Failed to fetch details for activity {activity_id}: {response.status_code}")
+                return None
+                
+        except requests.exceptions.RequestException as e:
+            print(f"✗ Network error fetching activity {activity_id}: {e}")
+            return None
