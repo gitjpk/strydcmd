@@ -161,22 +161,40 @@ class StrydAPI:
         
         try:
             response = requests.get(url, headers=headers)
-            
+
             if response.status_code == 200:
-                # Save the file
+                # The API returns a JSON object with a signed URL to the
+                # actual FIT file hosted on Google Cloud Storage.
+                # We need to follow that URL to download the binary.
+                try:
+                    data = response.json()
+                    fit_url = data.get("url")
+                except (ValueError, KeyError, AttributeError):
+                    fit_url = None
+
+                if fit_url:
+                    fit_response = requests.get(fit_url)
+                    if fit_response.status_code != 200:
+                        return None
+                    content = fit_response.content
+                else:
+                    # Fallback: if the response isn't JSON, assume it's
+                    # the raw FIT data directly.
+                    content = response.content
+
                 if filename:
                     file_basename = f"{filename}.fit"
                 else:
                     file_basename = f"{activity_id}.fit"
                 filepath = os.path.join(output_dir, file_basename)
-                
+
                 with open(filepath, 'wb') as f:
-                    f.write(response.content)
-                
+                    f.write(content)
+
                 return filepath
             else:
                 return None
-                
+
         except requests.exceptions.RequestException:
             return None
     
